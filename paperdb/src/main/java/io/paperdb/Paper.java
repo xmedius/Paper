@@ -183,4 +183,13 @@ public class Paper {
         if (!mCustomSerializers.containsKey(clazz))
             mCustomSerializers.put(clazz, serializer);
     }
+
+    /**
+     * like Paper.addSerializer()
+     * When used, must be called right after Paper.init()
+     */
+    public static <T> void register(Class<T> clazz) {
+        if (!mCustomSerializers.containsKey(clazz))
+            mCustomSerializers.put(clazz, null);
+    }
 }

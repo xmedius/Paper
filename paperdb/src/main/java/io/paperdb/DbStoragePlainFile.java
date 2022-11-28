@@ -54,7 +54,7 @@ class DbStoragePlainFile {
 
     private Kryo createKryoInstance(boolean compatibilityMode) {
         Kryo kryo = new Kryo();
-
+        kryo.setRegistrationRequired(true);
         if (compatibilityMode) {
             kryo.getFieldSerializerConfig().setOptimizedGenerics(true);
         }
@@ -79,9 +79,13 @@ class DbStoragePlainFile {
         // UUID support
         kryo.register(UUID.class, new UUIDSerializer());
 
-        for (Class<?> clazz : mCustomSerializers.keySet())
-            kryo.register(clazz, mCustomSerializers.get(clazz));
-
+        for (Class<?> clazz : mCustomSerializers.keySet()) {
+            if(mCustomSerializers.get(clazz) == null) {
+                kryo.register(clazz);
+            }else {
+                kryo.register(clazz, mCustomSerializers.get(clazz));
+            }
+        }
         kryo.setInstantiatorStrategy(
                 new Kryo.DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
 
