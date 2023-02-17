@@ -2,6 +2,7 @@ package io.paperdb;
 
 import android.content.Context;
 import android.util.Log;
+import android.util.Pair;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoException;
@@ -37,7 +38,7 @@ class DbStoragePlainFile {
     private static final String BACKUP_EXTENSION = ".bak";
 
     private final String mDbPath;
-    private final HashMap<Class, Serializer> mCustomSerializers;
+    private final HashMap<Class, Pair<Serializer, Integer>> mCustomSerializers;
     private volatile boolean mPaperDirIsCreated;
     private KeyLocker keyLocker = new KeyLocker(); // To sync key-dependent operations by key
 
@@ -80,10 +81,16 @@ class DbStoragePlainFile {
         kryo.register(UUID.class, new UUIDSerializer());
 
         for (Class<?> clazz : mCustomSerializers.keySet()) {
-            if(mCustomSerializers.get(clazz) == null) {
+            Pair<Serializer, Integer> serialization = mCustomSerializers.get(clazz);
+
+            if (serialization.first == null && serialization.second == null) {
                 kryo.register(clazz);
-            }else {
-                kryo.register(clazz, mCustomSerializers.get(clazz));
+            } else if (serialization.first != null && serialization.second == null) {
+                kryo.register(clazz, serialization.first); // Serializer
+            } else if (serialization.first == null && serialization.second != null) {
+                kryo.register(clazz, serialization.second); // Integer
+            } else {
+                kryo.register(clazz, serialization.first, serialization.second);
             }
         }
         kryo.setInstantiatorStrategy(
@@ -93,13 +100,13 @@ class DbStoragePlainFile {
     }
 
     DbStoragePlainFile(Context context, String dbName,
-                       HashMap<Class, Serializer> serializers) {
+                       HashMap<Class, Pair<Serializer, Integer>> serializers) {
         mCustomSerializers = serializers;
         mDbPath = context.getFilesDir() + File.separator + dbName;
     }
 
     DbStoragePlainFile(String dbFilesDir, String dbName,
-                       HashMap<Class, Serializer> serializers) {
+                       HashMap<Class, Pair<Serializer, Integer>> serializers) {
         mCustomSerializers = serializers;
         mDbPath = dbFilesDir + File.separator + dbName;
     }

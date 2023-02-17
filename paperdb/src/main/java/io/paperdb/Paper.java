@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Pair;
 
 import com.esotericsoftware.kryo.Serializer;
 
@@ -34,7 +35,7 @@ public class Paper {
     @SuppressLint("StaticFieldLeak") private static Context mContext;
 
     private static final ConcurrentHashMap<String, Book> mBookMap = new ConcurrentHashMap<>();
-    private static final HashMap<Class, Serializer> mCustomSerializers = new HashMap<>();
+    private static final HashMap<Class, Pair<Serializer, Integer>> mCustomSerializers = new HashMap<>();
 
     /**
      * Lightweight method to init Paper instance. Should be executed in {@link Application#onCreate()}
@@ -181,7 +182,7 @@ public class Paper {
      */
     public static <T> void addSerializer(Class<T> clazz, Serializer<T> serializer) {
         if (!mCustomSerializers.containsKey(clazz))
-            mCustomSerializers.put(clazz, serializer);
+            mCustomSerializers.put(clazz, new Pair<Serializer, Integer>(serializer, null));
     }
 
     /**
@@ -191,5 +192,10 @@ public class Paper {
     public static <T> void register(Class<T> clazz) {
         if (!mCustomSerializers.containsKey(clazz))
             mCustomSerializers.put(clazz, null);
+    }
+
+    public static <T> void register(Class<T> clazz, int id) {
+        if (!mCustomSerializers.containsKey(clazz))
+            mCustomSerializers.put(clazz, new Pair<Serializer, Integer>(null, id));
     }
 }
